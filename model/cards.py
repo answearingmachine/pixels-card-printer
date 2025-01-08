@@ -43,6 +43,17 @@ def get_cell_image(sigil_img, temple):
     patch_image.paste(sigil_img, (120, (patch_image.height - sigil_img.height) // 2 + 3), sigil_img)
     return patch_image
 
+
+def get_gemified_image(sigil_img, gems, temple):
+    big = "" if sigil_img.height <= 170 else "big_"
+    patch_image = costs.get_temple_variant(Image.open(f"assets/gemification/{big}scroll.png"), temple)
+    for gem in gems:
+        gem_img = Image.open(f"assets/gemification/{big}sigil_{gem}.png").convert("RGBA")
+        patch_image.paste(gem_img, (0, 0), gem_img)
+    patch_image.paste(sigil_img, (120, (patch_image.height - sigil_img.height) // 2), sigil_img)
+    return patch_image
+
+
 def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloodless, default_format: bool = True):
     can_draw_sigils = True
     # Add the combined height of all the sigils.
@@ -56,10 +67,15 @@ def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloo
             if sigil.is_latcher or sigil.is_cell:
                 sigil_img = get_latch_image(sigil_img, temple) if sigil.is_latcher else get_cell_image(sigil_img, temple)
                 sigil_y += 10 - sigil_y % 10
+            if sigil.is_gemified:
+                sigil_img = get_gemified_image(sigil_img, sigil.is_gemified, temple)
+                sigil_y -= 20 - sigil_y % 10
             # If the sigil height overflows the card, we can't draw the sigils.
             if sigil_y + sigil_img.height > image.height:
                 can_draw_sigils = False
             sigil_y += sigil_img.height + 5
+            if sigil.is_gemified:
+                sigil_y -= 20
     trait_height = 0
     if len(trait_list) > 0:
         traitlines = Image.open(f"assets/cardbacks/Traitlines.png")
@@ -78,7 +94,7 @@ def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloo
     return can_draw_sigils, use_empty_bottom, trait_height
 
 
-def paste_card_art(name, image, cost, temple):
+def paste_card_art(name, image, cost, temple, cost_is_gemified):
     # Fetch card art and paste it
     card_art = None
     image_file = name.translate(str.maketrans("", "", " ',-!?"))
@@ -101,7 +117,7 @@ def paste_card_art(name, image, cost, temple):
     for cost in cost:
         cost_img = cost.getCostImage(temple)
         cost_y -= cost_img.height + 10
-        image.paste(cost_img, (config['cost_right_border'] - cost_img.width, cost_y), cost_img)
+        image.paste(cost_img, (config['cost_right_border'] - cost_img.width - 30 * int(cost_is_gemified), cost_y), cost_img)
 
 
 def paste_sigil(image, sigil_img, box):
@@ -123,6 +139,7 @@ def get_sigil_and_trait_list(csv_dict, conduit):
         elt = att_dict[sigil].copy()
         elt.is_latcher = is_latcher
         elt.is_cell = is_cell
+        elt.is_gemified = is_gemified
         att_list.append(elt)
         if att_list[-1].needs_token:
             att_list[-1].setToken(tokens[token_id % len(tokens)])
@@ -136,8 +153,12 @@ def get_sigil_and_trait_list(csv_dict, conduit):
         for sigil in str_sigils:
             is_latcher = "LATCHER" in sigil
             is_cell = "CELL" in sigil
+            is_gemified = any(gem in sigil for gem in ["GREEN", "ORANGE", "BLUE", "PRISM"])
             if "LATCHER" in sigil or "CELL" in sigil:
                 sigil = sigil.split("_")[1]
+            if is_gemified:
+                is_gemified = sigil.split("_")
+                sigil = is_gemified.pop()
             if sigil == "RAINBOW":
                 sigil_list.append("RAINBOW")
             elif sigil in sigils.TRAITS and not (sigil == "Bloodless" and not config["show_bloodless_text"]):
@@ -153,7 +174,7 @@ def get_sigil_and_trait_list(csv_dict, conduit):
                         conduit = sigil.translate(str.maketrans("", "", " ',-!?"))
 
         for sigil in str_traits:
-            is_latcher, is_cell = False, False
+            is_latcher, is_cell, is_gemified = False, False, False
             if sigil in sigils.TRAITS and not (sigil == "Bloodless" and not config["show_bloodless_text"]):
                 if handle_sigil_or_trait(trait_list, sigils.TRAITS, str_tokens):
                     has_attack_sigil = True
@@ -273,10 +294,16 @@ def draw_sigils(image, temple, tier, file_tier, sac, bloodless,
                     sigil_img = get_latch_image(sigil_img, temple) if sigil.is_latcher else get_cell_image(sigil_img, temple)
                     sigil_y += 10 - sigil_y % 10
                     sigil_x = 20 if sigil.is_latcher else 0
+                if sigil.is_gemified:
+                    sigil_img = get_gemified_image(sigil_img, sigil.is_gemified, temple)
+                    sigil_y -= 10 - sigil_y % 10
+                    sigil_x = 0
                 else:
                     sigil_x = config['sigil_left_border']
                 image = paste_sigil(image, sigil_img, (sigil_x, sigil_y))
             sigil_y += sigil_img.height + 5
+            if sigil.is_gemified:
+                sigil_y -= 20
 
         if len(trait_list) > 0:
             try:
@@ -365,10 +392,26 @@ def create_card(csv_dict):
 
     # Load name
     name = csv_dict['Card Name']
-    cost = costs.get_cost(csv_dict['Cost'] if csv_dict['Cost'].upper() not in ['NONE', '', 'FREE'] else None)
+    cost = csv_dict['Cost']
+    cost_is_gemified = False
+    if "_" in cost:
+        cost_is_gemified = True
+        cost_gems = cost.split("_")
+        cost = cost_gems.pop()
+        canvas = costs.get_temple_variant(Image.open("assets/gemification/canvas.png").convert("RGBA"), temple)
+        image.paste(canvas, (950, 650), canvas)
+        for gem in cost_gems:
+            if gem in ["GREEN", "ORANGE", "BLUE", "PRISM"]:
+                gem = Image.open(f"assets/gemification/cost_{gem}.png").convert("RGBA")
+                image.paste(gem, (950, 650), gem)
+            else:
+                draw = ImageDraw.Draw(image)
+                gemifier_font = ImageFont.truetype(FONT, 90)
+                draw.text(((61 - draw.textlength(gem, font=gemifier_font)) // 2 + 1010, 807), gem, fill="black", font=gemifier_font)
+    cost = costs.get_cost(cost if cost.upper() not in ['NONE', '', 'FREE'] else None)
 
     if config["text_over_art"]:
-        paste_card_art(name, image, cost, temple)
+        paste_card_art(name, image, cost, temple, cost_is_gemified)
 
     # Determine the tribe list.
     tribes = csv_dict['Tribes'].split(' ') if csv_dict['Tribes'] not in ['None', ''] else []
@@ -426,11 +469,36 @@ def create_card(csv_dict):
     # Print stats
     draw = ImageDraw.Draw(image)
     heavyweight_font = ImageFont.truetype(FONT, config['stats'])
-    health = int(csv_dict['Health'] if csv_dict['Health'] not in ["x", "X", ''] else 0)
+    gemifier_font = ImageFont.truetype(FONT, 90)
+    health = csv_dict['Health']
+    if "_" in health:
+        health_gems = health.split("_")
+        health = health_gems.pop()
+        heart = costs.get_temple_variant(Image.open("assets/gemification/heart.png").convert("RGBA"), temple)
+        image.paste(heart, (900, 10), heart)
+        for gem in health_gems:
+            if gem in ["GREEN", "ORANGE", "BLUE", "PRISM"]:
+                gem = Image.open(f"assets/gemification/health_{gem}.png").convert("RGBA")
+                image.paste(gem, (900, 10), gem)
+            else:
+                draw.text(((110 - draw.textlength(gem, font=gemifier_font)) // 2 + 945, 115), gem, fill="black", font=gemifier_font)
+    health = int(health if health not in ["x", "X", ''] else 0)
     draw.text(config['health_coord'], str(health), fill="black", font=heavyweight_font)
     if not (has_attack_sigil and
             (config["remove_power_stat_when_attack_sigil_present"] or config["attack_sigil_on_power_stat"])):
-        power = int(csv_dict['Power'] if csv_dict['Power'] not in ["x", "X", ''] else 0)
+        power = csv_dict['Power']
+        if "_" in power:
+            power_gems = power.split("_")
+            power = power_gems.pop()
+            banner = costs.get_temple_variant(Image.open("assets/gemification/banner.png").convert("RGBA"), temple)
+            image.paste(banner, (0, 610), banner)
+            for gem in power_gems:
+                if gem in ["GREEN", "ORANGE", "BLUE", "PRISM"]:
+                    gem = Image.open(f"assets/gemification/power_{gem}.png").convert("RGBA")
+                    image.paste(gem, (0, 610), gem)
+                else:
+                    draw.text(((110 - draw.textlength(gem, font=gemifier_font)) // 2 + 45, 720), gem, fill="black", font=gemifier_font)
+        power = int(power if power not in ["x", "X", ''] else 0)
         power_coord = config['power_coord'].get(temple if not bloodless else 'Terrain')
         draw.text(power_coord, str(power), fill="black", font=heavyweight_font)
 
