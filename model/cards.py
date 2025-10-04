@@ -294,7 +294,7 @@ def draw_sigils(image, temple, tier, file_tier, sac, bloodless,
                     sigil_img = get_latch_image(sigil_img, temple) if sigil.is_latcher else get_cell_image(sigil_img, temple)
                     sigil_y += 10 - sigil_y % 10
                     sigil_x = 20 if sigil.is_latcher else 0
-                if sigil.is_gemified:
+                elif sigil.is_gemified:
                     sigil_img = get_gemified_image(sigil_img, sigil.is_gemified, temple)
                     sigil_y -= 10 - sigil_y % 10
                     sigil_x = 0
