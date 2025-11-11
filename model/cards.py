@@ -1,11 +1,23 @@
 from PIL import Image, ImageDraw, ImageFont
 from model import config, logging, sigils, costs
+from model import sigils_space
 from unidecode import unidecode
 
 TEMPLES = config['temples']
 TEXT_COLORS = config['text_colors']
-FONT = "data/fonts/" + config['font'] + ".ttf"
+DEFAULT_FONT = "data/fonts/" + config['font'] + ".ttf"
 
+SPACE_FONT = "data/fonts/" + config['spacefont'] + ".ttf" # is there a better way to handle this???
+
+SPACE_PURPLE = "#9a33c4" # (154,51,196) 
+SPACE_PINK = "#bc2b91" # (188,43,145) 
+
+def get_pref_text_color(tier, temple):
+    if temple == "Space":
+        color = "#9a33c4" if tier != "Rare" else "#bc2b91"
+    else:
+        color = "#000000"
+    return color
 
 def get_bottom_outline_y(tier, temple, bloodless):
     bloodless = bloodless and config["bloodless_outline"]
@@ -55,6 +67,7 @@ def get_gemified_image(sigil_img, gems, temple):
 
 
 def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloodless, default_format: bool = True):
+    font = SPACE_FONT if temple=="Space" else DEFAULT_FONT
     can_draw_sigils = True
     # Add the combined height of all the sigils.
     for sigil in sigil_list:
@@ -63,7 +76,7 @@ def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloo
                 can_draw_sigils = False
             sigil_y += 75 + (10 - sigil_y % 10)
         else:
-            sigil_img = sigil.getImage() if default_format else sigil.getImage(shortened_format=True)
+            sigil_img = sigil.getImage(font=font) if default_format else sigil.getImage(shortened_format=True)
             if sigil.is_latcher or sigil.is_cell:
                 sigil_img = get_latch_image(sigil_img, temple) if sigil.is_latcher else get_cell_image(sigil_img, temple)
                 sigil_y += 10 - sigil_y % 10
@@ -82,7 +95,7 @@ def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloo
         traitline = costs.get_temple_variant(traitlines, temple)
         trait_height = traitline.height * 10 + 6
     for trait in trait_list:
-        trait_img = trait.getImage(color=TEXT_COLORS[temple])
+        trait_img = trait.getImage(color=TEXT_COLORS[temple],font=font)
         # If the trait height overflows the card, we can't draw the sigils.
         if sigil_y + trait_height + trait_img.height > image.height:
             can_draw_sigils = False
@@ -94,7 +107,7 @@ def format_evaluation(sigil_list, trait_list, sigil_y, image, tier, temple, bloo
     return can_draw_sigils, use_empty_bottom, trait_height
 
 
-def paste_card_art(name, image, cost, temple, cost_is_gemified):
+def paste_card_art(name, image, cost, tier, temple, cost_is_gemified):
     # Fetch card art and paste it
     card_art = None
     image_file = name.translate(str.maketrans("", "", " ',-!?"))
@@ -113,11 +126,12 @@ def paste_card_art(name, image, cost, temple, cost_is_gemified):
     image.paste(card_art, mask=card_art)
 
     # Generate and paste cost
-    cost_y = config['cost_bottom']
+    cost_y = config['cost_bottom'].get(temple)
+    is_space_rare = (temple == "Space" and tier == "Rare")
     for cost in cost:
-        cost_img = cost.getCostImage(temple)
+        cost_img = cost.getCostImage(temple,space_rare=is_space_rare)
         cost_y -= cost_img.height + 10
-        image.paste(cost_img, (config['cost_right_border'] - cost_img.width - 30 * int(cost_is_gemified), cost_y), cost_img)
+        image.paste(cost_img, (config['cost_right_border'].get(temple) - cost_img.width - 30 * int(cost_is_gemified), cost_y), cost_img)
 
 
 def paste_sigil(image, sigil_img, box):
@@ -185,23 +199,24 @@ def get_sigil_and_trait_list(csv_dict, conduit):
         logging.error(f"Error: {e}")
 
 
-def write_name(image, draw, name):
+def write_name(image, draw, name, tier, temple):
     written_name = unidecode(name).replace("_alt", "")
     name_size = config['name']
-    name_y = config['card_name_top_height']
-    heavyweight_font = ImageFont.truetype(FONT, name_size)
-    while draw.textlength(written_name, font=heavyweight_font) > config['max_name_width']:
+    name_y = config['card_name_top_height'].get(temple)
+    if temple=="Space": written_name = written_name.upper()
+    name_font = ImageFont.truetype(DEFAULT_FONT, name_size) if temple != "Space" else ImageFont.truetype(SPACE_FONT, name_size)
+    while draw.textlength(written_name, font=name_font) > config['max_name_width']:
         name_size -= 1
-        heavyweight_font = ImageFont.truetype(FONT, name_size)
+        name_font = (ImageFont.truetype(DEFAULT_FONT, name_size) if temple != "Space" else ImageFont.truetype(SPACE_FONT, name_size))
         name_y += 0.5
     if config["center_card_name"]:
-        name_x = (image.width - draw.textlength(written_name, font=heavyweight_font)) // 2
+        name_x = (image.width - draw.textlength(written_name, font=name_font)) // 2
     else:
         name_x = config["card_name_left_border"]
-    draw.text((name_x, int(name_y)), written_name, fill="black", font=heavyweight_font)
+    draw.text((name_x, int(name_y)), written_name, fill=get_pref_text_color(tier, temple), font=name_font)
 
 
-def write_flavor_text(draw, font, flavor_text, temple):
+def write_flavor_text(draw, font, flavor_text, tier, temple):
     flavor_text: str = flavor_text.replace("\r", "").replace("\n", " ").replace('"', "''")
     if flavor_text != "BLANK":
         while draw.textlength(flavor_text, font=font) > config['max_flavor_text_width']:
@@ -209,7 +224,10 @@ def write_flavor_text(draw, font, flavor_text, temple):
             flavor_text = flavor_text[:limit] + "..."
             flavor_text += "''" if "''" in flavor_text else ""
         flavor_text_x = 300 + (700 - draw.textlength(flavor_text, font=font)) // 2
-        draw.text((flavor_text_x, config['flavor_text_top_height']), flavor_text, fill=TEXT_COLORS[temple],
+        fill_color = TEXT_COLORS[temple]
+        if temple == "Space" and tier == "Rare":
+            fill_color = TEXT_COLORS["Space2"] # inelegant
+        draw.text((flavor_text_x, config['flavor_text_top_height'].get(temple)), flavor_text, fill=fill_color,
                   font=font)
 
 
@@ -220,24 +238,38 @@ def write_card_description(image, draw, font, temple, tier, tribes):
         for tribe in tribes:
             description += tribe + " "
         description = description[:-1]
+    if temple == "Space": description = description.upper()
     desc_y = config['description_top_height']
     desc_x = (image.width - draw.textlength(description, font=font)) // 2
-    draw.text((desc_x, desc_y), description, fill=TEXT_COLORS[temple], font=font)
+    fill_color = TEXT_COLORS[temple]
+    if temple == "Space" and tier == "Rare":
+        fill_color = TEXT_COLORS["Space2"]
+    draw.text((desc_x, desc_y), description, fill=fill_color, font=font)
 
 
 def draw_text(image, name, tier, temple, tribes, flavor_text):
     draw = ImageDraw.Draw(image)
-    heavyweight_font = ImageFont.truetype(FONT, config['flavor_text'])
+    font_path = DEFAULT_FONT if temple!="Space" else SPACE_FONT
+    current_font = ImageFont.truetype(font_path, config['flavor_text'])
 
     # Write card name
-    write_name(image, draw, name)
+    write_name(image, draw, name, tier, temple)
 
     # Write flavor text
-    write_flavor_text(draw, heavyweight_font, flavor_text, temple)
+    if temple == "Space":
+        flavor_text = flavor_text.lower()
+        flavor_text_font = ImageFont.truetype(SPACE_FONT, 28)
+    else:
+        flavor_text_font = current_font
+    write_flavor_text(draw, flavor_text_font, flavor_text, tier, temple)
 
     # Write tribes, tier and temple
     if config["write_card_description"]:
-        write_card_description(image, draw, heavyweight_font, temple, tier, tribes)
+        if temple == "Space":
+            desc_font = ImageFont.truetype(SPACE_FONT, 28)
+        else:
+            desc_font = current_font
+        write_card_description(image, draw, desc_font, temple, tier, tribes)
 
 
 def draw_conduit_indicator(image, conduit_img):
@@ -281,6 +313,14 @@ def draw_sigils(image, temple, tier, file_tier, sac, bloodless,
             image = draw_conduit_indicator(image, conduit_img)
 
         # Draw each sigil on the card
+        if temple=="Space":
+            current_font = SPACE_FONT
+            sigil_color = (188,43,145) if tier=="Rare" else (154,51,196)
+        else:
+            current_font = DEFAULT_FONT
+            sigil_color = 'black'
+        # sigil_color = (255,0,1)
+
         for sigil in sigil_list:
             if sigil == "RAINBOW":
                 sigil_y += 10 - sigil_y % 10
@@ -289,7 +329,9 @@ def draw_sigils(image, temple, tier, file_tier, sac, bloodless,
                 image = paste_sigil(image, sigil_img, (130, sigil_y))
                 sigil_y += 5
             else:
-                sigil_img = sigil.getImage() if default_format else sigil.getImage(shortened_format=True)
+                shorten = True if default_format else False
+                sigil_img = sigil.getImage(color=sigil_color,shortened_format=shorten,font=current_font)
+                #sigil_img = sigil.getImage() if default_format else sigil.getImage(shortened_format=True)
                 if sigil.is_latcher or sigil.is_cell:
                     sigil_img = get_latch_image(sigil_img, temple) if sigil.is_latcher else get_cell_image(sigil_img, temple)
                     sigil_y += 10 - sigil_y % 10
@@ -406,12 +448,12 @@ def create_card(csv_dict):
                 image.paste(gem, (950, 650), gem)
             else:
                 draw = ImageDraw.Draw(image)
-                gemifier_font = ImageFont.truetype(FONT, 90)
-                draw.text(((61 - draw.textlength(gem, font=gemifier_font)) // 2 + 1010, 807), gem, fill="black", font=gemifier_font)
+                gemifier_font = ImageFont.truetype(DEFAULT_FONT, 90)
+                draw.text(((61 - draw.textlength(gem, font=gemifier_font)) // 2 + 1010, 807), gem, fill=get_pref_text_color(tier,temple), font=gemifier_font)
     cost = costs.get_cost(cost if cost.upper() not in ['NONE', '', 'FREE'] else None)
 
     if config["text_over_art"]:
-        paste_card_art(name, image, cost, temple, cost_is_gemified)
+        paste_card_art(name, image, cost, tier, temple, cost_is_gemified)
 
     # Determine the tribe list.
     tribes = csv_dict['Tribes'].split(' ') if csv_dict['Tribes'] not in ['None', ''] else []
@@ -464,12 +506,15 @@ def create_card(csv_dict):
         image = draw_base_game_display(image, conduit, conduit_img, sigil_list)
 
     if not config["text_over_art"]:
-        paste_card_art(name, image, cost, temple)
+        paste_card_art(name, image, cost, tier, temple)
 
     # Print stats
     draw = ImageDraw.Draw(image)
-    heavyweight_font = ImageFont.truetype(FONT, config['stats'])
-    gemifier_font = ImageFont.truetype(FONT, 90)
+    if temple == "Space":
+        current_font = ImageFont.truetype(SPACE_FONT, 69)
+    else:
+        current_font = ImageFont.truetype(DEFAULT_FONT, config['stats'])
+    gemifier_font = ImageFont.truetype(DEFAULT_FONT, 90)
     health = csv_dict['Health']
     if "_" in health:
         health_gems = health.split("_")
@@ -481,9 +526,13 @@ def create_card(csv_dict):
                 gem = Image.open(f"assets/gemification/health_{gem}.png").convert("RGBA")
                 image.paste(gem, (900, 10), gem)
             else:
-                draw.text(((110 - draw.textlength(gem, font=gemifier_font)) // 2 + 945, 115), gem, fill="black", font=gemifier_font)
+                draw.text(((110 - draw.textlength(gem, font=gemifier_font)) // 2 + 945, 115), gem, fill=get_pref_text_color(tier,temple), font=gemifier_font)
+    # i think that's all gemify stuff
     health = int(health if health not in ["x", "X", ''] else 0)
-    draw.text(config['health_coord'], str(health), fill="black", font=heavyweight_font)
+    health_coord = config['health_coord'].get(temple)
+    if temple == "Space" and health == 1:
+        health_coord = (908,217) # IN A PERFECT WORLD THIS WOULD NOT BE A MAGIC NUMBER
+    draw.text(health_coord, str(health), fill=get_pref_text_color(tier,temple), font=current_font)
     if not (has_attack_sigil and
             (config["remove_power_stat_when_attack_sigil_present"] or config["attack_sigil_on_power_stat"])):
         power = csv_dict['Power']
@@ -497,9 +546,12 @@ def create_card(csv_dict):
                     gem = Image.open(f"assets/gemification/power_{gem}.png").convert("RGBA")
                     image.paste(gem, (0, 610), gem)
                 else:
-                    draw.text(((110 - draw.textlength(gem, font=gemifier_font)) // 2 + 45, 720), gem, fill="black", font=gemifier_font)
+                    draw.text(((110 - draw.textlength(gem, font=gemifier_font)) // 2 + 45, 720), gem, fill=get_pref_text_color(tier,temple), font=gemifier_font)
         power = int(power if power not in ["x", "X", ''] else 0)
-        power_coord = config['power_coord'].get(temple if not bloodless else 'Terrain')
-        draw.text(power_coord, str(power), fill="black", font=heavyweight_font)
+        power_coord = config['power_coord'].get(temple)
+        if temple == "Space" and power == 1:
+            power_coord = (213, 881) # but i cba to set up a whole schema for per-temple layouts rn
+        # although tbh if me or anyone else ever has to come fix this, a slightly better way would be to read out what the current *font* is since that's what's actually important here god is this really how i am
+        draw.text(power_coord, str(power), fill=get_pref_text_color(tier,temple), font=current_font)
 
     return image, name

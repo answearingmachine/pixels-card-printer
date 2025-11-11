@@ -12,22 +12,18 @@ SIGIL_DESCRIPTION_SIZE = config['sigil_description']
 TRAIT_DESCRIPTION_SIZE = config['trait_description']
 SIGIL_DESC_ICON_SIZE = config['sigil_description_icon_size']
 TRAIT_DESC_ICON_SIZE = config['trait_description_icon_size']
-FONT = "data/fonts/" + config['font'] + ".ttf"
-SPACEFONT = "data/fonts/" + config['spacefont'] + ".ttf"
+#FONT = "data/fonts/" + config['font'] + ".ttf"
+FONT = "data/fonts/" + config['spacefont'] + ".ttf" # force space font
 SIGIL_SCALE = config["sigil_img_scale"] / 100
 
-SPACEFONT_COEFF = 0.75 # multiply font size by this MAGIC NUMBER because i am dumb (eb font too big)
 
-
-def get_colon_image(color, size, font=FONT):
-    #print ("ay look it's this fuckin thing")
+def get_colon_image(color, size):
+    print ("ay look it's this fuckin thing")
     image = Image.new("RGBA", (SIGIL_DESCRIPTION_SIZE, SIGIL_DESCRIPTION_SIZE), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
-    if font != FONT: size = int(size*SPACEFONT_COEFF)
-
-    heavyweight_font = ImageFont.truetype(font, size)
-
+    heavyweight_font = ImageFont.truetype(FONT, size)
+    
     size = draw.textlength(".", font=heavyweight_font)
     draw.text((0, 0), ".", fill=color, font=heavyweight_font)
     draw.text((0, -size * 2.5), ".", fill=color, font=heavyweight_font)
@@ -42,9 +38,7 @@ def write_description(x_offset, y_offset, starting_size, description_words, colo
     size = starting_size
     draw = ImageDraw.Draw(text_img)
 
-    desc_size = SIGIL_DESCRIPTION_SIZE if font == FONT else int(SIGIL_DESCRIPTION_SIZE*SPACEFONT_COEFF)
-
-    heavyweight_font = ImageFont.truetype(font, desc_size) # this one's fixed
+    heavyweight_font = ImageFont.truetype(font, SIGIL_DESCRIPTION_SIZE) # this one's fixed
 
     def add_new_line():
         """Helper function to add a new line to the image."""
@@ -59,8 +53,6 @@ def write_description(x_offset, y_offset, starting_size, description_words, colo
     def paste_image(image, x_position):
         """Helper function to paste an image at a specific position."""
         text_img.paste(image, (int(x_position), y_offset), image)
-
-    #print(description_words)
 
     for word in description_words:
         # Handling words with embedded icons
@@ -93,23 +85,14 @@ def write_description(x_offset, y_offset, starting_size, description_words, colo
 
         # Handling text words
         else:
-            if font != FONT: 
-                print("yeah we in space")
-                corrected_word = word.lower()
-            else:
-                corrected_word = word
-
-            print(corrected_word)
-
-            space_word_length = draw.textlength(" " + corrected_word, font=heavyweight_font)
-            #print("drawing text i think? font is "+str(font))
+            space_word_length = draw.textlength(" " + word, font=heavyweight_font)
             if size + space_word_length <= size_limit:
-                draw.text((size, y_offset), " " + corrected_word, fill=color, font=heavyweight_font)
+                draw.text((size, y_offset), " " + word, fill=color, font=heavyweight_font)
                 size += space_word_length
             else:
                 add_new_line()
-                draw.text((x_offset, y_offset), corrected_word, fill=color, font=heavyweight_font)
-                size = x_offset + draw.textlength(corrected_word, font=heavyweight_font)
+                draw.text((x_offset, y_offset), word, fill=color, font=heavyweight_font)
+                size = x_offset + draw.textlength(word, font=heavyweight_font)
 
     return y_offset, text_img
 
@@ -161,17 +144,12 @@ class Sigil:
             add_color(sigil_img, color)
         return sigil_img
 
-    def __draw_base_game(self, sigil_img, color, font=FONT):
-        if font != FONT: # note to self: if something goes wrong it is probably because of this godawful hack job you did right here
-            print("wait why the fuck are we doing basegame render")
+    def __draw_base_game(self, sigil_img, color):
 
-        name_size = SIGIL_NAME_SIZE if font == FONT else int(SIGIL_NAME_SIZE*SPACEFONT_COEFF)
-
-        heavyweight_font = ImageFont.truetype(font, name_size) ####################################
+        heavyweight_font = ImageFont.truetype(FONT, SIGIL_NAME_SIZE) ####################################
 
         text_img = Image.new("RGBA", (SIGIL_DESC_SPACE, SIGIL_NAME_SIZE), (0, 0, 0, 0))
         draw = ImageDraw.Draw(text_img)
-        print("drawing basegame; font is "+str(font))
         draw.text((0, 0), self.name, fill=color, font=heavyweight_font)
 
         text_img = text_img.crop((0, 0, round(draw.textlength(self.name, font=heavyweight_font)), SIGIL_NAME_SIZE))
@@ -208,16 +186,14 @@ class Sigil:
         return description_words
 
     @staticmethod
-    def __get_trait_image(color, description_words, font=FONT):
+    def __get_trait_image(color, description_words):
         size_limit = config['sigil_space'] - 10
         text_img = Image.new("RGBA", (size_limit, TRAIT_DESCRIPTION_SIZE), (0, 0, 0, 0))
         draw = ImageDraw.Draw(text_img)
         lengths = [0]
         words_per_phrase = [0]
 
-        trait_size = TRAIT_DESCRIPTION_SIZE if font == FONT else int(TRAIT_DESCRIPTION_SIZE*SPACEFONT_COEFF)
-
-        heavyweight_font = ImageFont.truetype(font, trait_size) ##############################
+        heavyweight_font = ImageFont.truetype(FONT, TRAIT_DESCRIPTION_SIZE) ##############################
 
         # Calculate x_offset for each step
         def add_width(width, added_width=None):
@@ -235,7 +211,9 @@ class Sigil:
                 icon_path = f"assets/{icon_type}/{word[colon_id + 1:-1]}.png"
                 icon = get_resized_image(Image.open(icon_path), TRAIT_DESC_ICON_SIZE)
                 add_width(icon.width)
-
+            elif word == ":":
+                colon = get_colon_image('black', TRAIT_DESCRIPTION_SIZE)
+                add_width(colon.width)
             else:
                 add_width(draw.textlength(" " + word, font=heavyweight_font),
                           draw.textlength(word, font=heavyweight_font))
@@ -273,9 +251,12 @@ class Sigil:
                 if color != 'black':
                     add_color(icon, color)
                 add_image(icon)
-
+            elif word == ":":
+                colon = get_colon_image('black', TRAIT_DESCRIPTION_SIZE)
+                if color != 'black':
+                    add_color(colon, color)
+                add_image(colon)
             elif word_id < words_per_phrase[0]:
-                print("drawing uhhh trait? font is "+str(font))
                 draw.text((x_offset, y_offset), " " + word, fill=color, font=heavyweight_font)
                 x_offset += draw.textlength(" " + word, font=heavyweight_font)
             else:
@@ -292,7 +273,7 @@ class Sigil:
             word_id += 1
         return text_img
 
-    def getImage(self, color='black', base_game: bool = False, shortened_format: bool = False, font=FONT):
+    def getImage(self, color='black', base_game: bool = False, shortened_format: bool = False):
         if base_game and self.base_game_image:
             return self.base_game_image
         if shortened_format and self.short_image:
@@ -318,21 +299,13 @@ class Sigil:
             self.base_game_image = self.image
             return self.image
 
-        name_size = SIGIL_NAME_SIZE if font == FONT else int(SIGIL_NAME_SIZE*SPACEFONT_COEFF)
-
-        heavyweight_font = ImageFont.truetype(font, name_size) ####################################################### hate
+        heavyweight_font = ImageFont.truetype(FONT, SIGIL_NAME_SIZE) ####################################################### hate
 
         text_img = Image.new("RGBA", (SIGIL_DESC_SPACE, SIGIL_NAME_SIZE), (0, 0, 0, 0))
         draw = ImageDraw.Draw(text_img)
-
-        sigil_name = self.name if font==FONT else self.name.upper()
-
-        size = round(draw.textlength(sigil_name, font=heavyweight_font))
-        print("drawing .....idk??? font is "+str(font))
-        draw.text((0, 0), sigil_name, fill=color, font=heavyweight_font)
-
-        # shortened_format
-        if False: # I HATE YOUUUUUU
+        size = round(draw.textlength(self.name, font=heavyweight_font))
+        draw.text((0, 0), self.name, fill=color, font=heavyweight_font)
+        if shortened_format:
             # Draw sigil using shortened formatting
 
             colon = get_colon_image(color, SIGIL_NAME_SIZE)
@@ -341,7 +314,7 @@ class Sigil:
 
             y_offset, text_img = write_description(0, SIGIL_NAME_SIZE - SIGIL_DESCRIPTION_SIZE - 1,
                                                    size, description_words, color,
-                                                   text_img, SIGIL_DESC_SPACE, font=font)
+                                                   text_img, SIGIL_DESC_SPACE)
         else:
             # Draw sigil normally
 
@@ -351,21 +324,19 @@ class Sigil:
             text_img = new_img
             draw = ImageDraw.Draw(text_img)
 
-            heavyweight_font = ImageFont.truetype(font, SIGIL_DESCRIPTION_SIZE if font==FONT else int(SIGIL_DESCRIPTION_SIZE*SPACEFONT_COEFF)) ######################################
+            heavyweight_font = ImageFont.truetype(FONT, SIGIL_DESCRIPTION_SIZE) ######################################
 
             size = SIGIL_DESCRIPTION_SIZE
 
             # We have to draw the first word because for some reason otherwise the first line is offset from the others.
             if not ("[" in description_words[0]):
                 first_word = description_words.pop(0)
-                if font != FONT: first_word = first_word.lower()
-                print("drawing weird first line exception? font is "+str(font))
                 draw.text((size, SIGIL_NAME_SIZE), first_word, fill=color, font=heavyweight_font)
                 size += draw.textlength(first_word, font=heavyweight_font)
 
             y_offset, text_img = write_description(SIGIL_DESCRIPTION_SIZE, SIGIL_NAME_SIZE,
                                                    size, description_words, color,
-                                                   text_img, SIGIL_DESC_SPACE, font=font)
+                                                   text_img, SIGIL_DESC_SPACE)
 
         text_height = y_offset + SIGIL_DESCRIPTION_SIZE
         final_img_height = max(text_height, sigil_img.height)

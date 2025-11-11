@@ -95,7 +95,7 @@ class Energy:
             raise TypeError("Sub operation can only be performed on two resources of the same type")
         return Energy(self.current_energy - other.current_energy, self.max_energy - other.max_energy)
 
-    def getCostImage(self, temple: str) -> Image:
+    def getCostImage(self, temple: str, space_rare=False) -> Image:
         if self.current_energy > 6:
             img = Image.open(f"assets/costs/energy/energy{self.current_energy}.png").convert("RGBA")
             energy_img = get_temple_variant(img, temple)
@@ -108,7 +108,9 @@ class Energy:
             else:
                 cost_img = energy_img
         else:
-            img = Image.open("assets/costs/energy/energy_bar.png").convert("RGBA")
+            energy_bar_path = "assets/costs/energy/energy_bar.png"
+            if space_rare: energy_bar_path="assets/costs/energy/energy_bar2.png"
+            img = Image.open(energy_bar_path).convert("RGBA")
             cost_img = get_temple_variant(img, temple)
 
             x_index = img.width - 10 * 4

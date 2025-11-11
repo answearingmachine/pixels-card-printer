@@ -1,0 +1,65 @@
+2025-11-03 03:33:03,775 - root - ERROR - Error: assets/cardbacks/RareSpace_bt.png image not found.
+2025-11-03 03:33:03,776 - root - ERROR - Error in thread while executing export function: cannot unpack non-iterable NoneType object
+Traceback (most recent call last):
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 37, in target_func
+    export_function(*args, **kwargs)
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 170, in export_card
+    image, name = cards.create_card(row)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\model\cards.py", line 483, in create_card
+    can_draw_sigils, image = draw_sigils(
+    ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+2025-11-03 03:34:57,258 - root - ERROR - Error: assets/cardbacks/RareSpace_bt.png image not found.
+2025-11-03 03:34:57,259 - root - ERROR - Error in thread while executing export function: cannot unpack non-iterable NoneType object
+Traceback (most recent call last):
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 37, in target_func
+    export_function(*args, **kwargs)
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 170, in export_card
+    image, name = cards.create_card(row)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\model\cards.py", line 483, in create_card
+    can_draw_sigils, image = draw_sigils(
+    ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+2025-11-04 03:17:43,145 - root - ERROR - Error: assets/cardbacks/RareSpace_bt.png image not found.
+2025-11-04 03:17:43,147 - root - ERROR - Error in thread while executing export function: cannot unpack non-iterable NoneType object
+Traceback (most recent call last):
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 37, in target_func
+    export_function(*args, **kwargs)
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 170, in export_card
+    image, name = cards.create_card(row)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\model\cards.py", line 483, in create_card
+    can_draw_sigils, image = draw_sigils(
+    ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+2025-11-04 03:24:15,019 - root - ERROR - Error: assets/cardbacks/RareSpace_bt.png image not found.
+2025-11-04 03:24:15,021 - root - ERROR - Error in thread while executing export function: cannot unpack non-iterable NoneType object
+Traceback (most recent call last):
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 37, in target_func
+    export_function(*args, **kwargs)
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 170, in export_card
+    image, name = cards.create_card(row)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\model\cards.py", line 483, in create_card
+    can_draw_sigils, image = draw_sigils(
+    ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+2025-11-04 03:24:36,059 - root - ERROR - Error: assets/cardbacks/RareSpace_bt.png image not found.
+2025-11-04 03:24:36,060 - root - ERROR - Error in thread while executing export function: cannot unpack non-iterable NoneType object
+Traceback (most recent call last):
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 37, in target_func
+    export_function(*args, **kwargs)
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\main.py", line 170, in export_card
+    image, name = cards.create_card(row)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\WATCH ME MAKE CARDS HERE LAWL\proflkigate\memoriam\STOLENCODE\pixels-card-printer\model\cards.py", line 483, in create_card
+    can_draw_sigils, image = draw_sigils(
+    ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+

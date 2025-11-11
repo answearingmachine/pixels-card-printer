@@ -16,6 +16,7 @@ traits_file_path = "data/traits.csv"     # Traits file path (Default: "data/trai
 # Careful ! Changing this will require changing a lot of other parameters (such as text size and position) in order
 # for the cards to look good.
 font = "heavyweight"
+spacefont = "eb-compact"
 
 
 ####  SIGIL AND TRAITS SECTION
@@ -62,7 +63,7 @@ export_color = [0, 0, 0]    # Color in which sigils (and traits if exported_trai
 # Formatting and display options for cards
 allow_default_formatting = true     # Use default formatting for sigils on cards (Default: true)
 allow_card_bottom_removal = true    # Allow removal of bottom outline on cards if necessary (Default: true)
-allow_shorter_formatting = true     # Allow shorter sigil formatting if necessary (Default: true)
+allow_shorter_formatting = false     # Allow shorter sigil formatting if necessary (Default: true)
 allow_base_game_display = true      # Allow base game sigil display (Default: true). Setting this to false may result in sigils flowing out of the card.
 # Prioritize removing bottom outline before shortening sigils' formatting. (Default: true)
 # Only applies to default formatting, as the program will always try to remove the bottom outline before using the base game display. (only if allow_card_bottom_removal is on)
@@ -93,13 +94,18 @@ flavor_text = 45    # Flavor text size (Default: 45)
 
 # Indicates the order of temples. Used to determine which variant of a sprite to take.
 # (Default: ["Beast", "Undead", "Tech", "Magick"])
-temples = ["Beast", "Undead", "Tech", "Magick"]
+temples = ["Beast", "Undead", "Tech", "Magick", "Insanity", "Chaos", "Valor", "Space"]
 
 text_colors.Beast = [125, 78, 48]       # Beast temple flavor text color (Default: [125, 78, 48])
 text_colors.Undead = [106, 112, 84]     # Undead temple flavor text color (Default: [106, 112, 84])
 text_colors.Tech = [73, 123, 156]       # Tech temple flavor text color (Default: [73, 123, 156])
 text_colors.Magick = [156, 73, 128]     # Magick temple flavor text color (Default: [156, 73, 128])
-
+text_colors.Insanity = [177, 45, 54]
+text_colors.Chaos = [168, 61, 85]
+text_colors.Valor = [113, 113, 113]
+text_colors.Space = [123, 29, 162]
+text_colors.Space2 = [154, 29, 115] # no idea if i can make this work
+                                    # stop writing comments so casually this is exactly what you got made fun of for
 
 # Sigil height limits for each outline. Common heights also serve as talking and side deck heights.
 max_common_height = 1430            # Default: 1430
@@ -111,11 +117,19 @@ max_rare_height.Beast = 1420    # Default: 1420
 max_rare_height.Undead = 1430   # Default: 1430
 max_rare_height.Tech = 1430     # Default: 1430
 max_rare_height.Magick = 1430   # Default: 1430
+max_rare_height.Insanity = 1430
+max_rare_height.Chaos = 1430
+max_rare_height.Valor = 1430
+max_rare_height.Space = 1450
 # Height limit for rare terrain cards' sigils vary from temple to temple.
 max_rare_terrain_height.Beast = 1430    # Default: 1430
 max_rare_terrain_height.Undead = 1430   # Default: 1430
 max_rare_terrain_height.Tech = 1430     # Default: 1430
 max_rare_terrain_height.Magick = 1430   # Default: 1430
+max_rare_terrain_height.Insanity = 1430
+max_rare_terrain_height.Chaos = 1430
+max_rare_terrain_height.Valor = 1430
+max_rare_terrain_height.Space = 1430
 
 # Coordinates of the power stat for each attack mark.
 power_coord.Terrain = [193, 885]    # Default: [193, 885]
@@ -123,12 +137,20 @@ power_coord.Beast = [198, 885]      # Default: [198, 885]
 power_coord.Undead = [198, 885]     # Default: [198, 885]
 power_coord.Tech = [198, 885]       # Default: [198, 885]
 power_coord.Magick = [198, 885]     # Default: [198, 885]
+power_coord.Insanity = [198, 885]
+power_coord.Chaos = [198, 885]
+power_coord.Valor = [198, 885]
+power_coord.Space = [186, 881]
 # Box for the attack sigil to go on the power stat for each attack mark (only if attack_sigil_on_power_stat is on)
 attack_sigil_box.Terrain = [130, 840, 300, 1020]    # Default: [130, 840, 300, 1020]
 attack_sigil_box.Beast = [130, 840, 310, 1010]      # Default: [130, 840, 310, 1010]
 attack_sigil_box.Undead = [130, 840, 320, 1020]     # Default: [130, 840, 320, 1020]
 attack_sigil_box.Tech = [120, 830, 320, 1030]       # Default: [120, 830, 320, 1030]
 attack_sigil_box.Magick = [130, 840, 310, 1030]     # Default: [130, 840, 310, 1030]
+attack_sigil_box.Insanity = [130, 840, 310, 1030]
+attack_sigil_box.Chaos = [130, 840, 310, 1030]
+attack_sigil_box.Valor = [130, 840, 310, 1030]
+attack_sigil_box.Space = [130, 840, 310, 1030]
 
 # Card export settings
 export_sorted_by_folder = true  # Will create folders for each temple and tier to sort the cards when exporting them.
@@ -136,15 +158,63 @@ export_sorted_by_folder = true  # Will create folders for each temple and tier t
 # From here on, it is advised that these values are not changed.
 
 card_name_left_border = 138     # Left border for writing card names if not centered (Default: 138)
-card_name_top_height = 138      # Top height for writing card names (Default: 138)
+#card_name_top_height = 138      # Top height for writing card names (Default: 138)
+
+card_name_top_height.Beast = 138
+card_name_top_height.Undead = 138
+card_name_top_height.Tech = 138
+card_name_top_height.Magick = 138
+card_name_top_height.Insanity = 128
+card_name_top_height.Chaos = 138
+card_name_top_height.Valor = 138
+card_name_top_height.Space = 108
+
 max_name_width = 870            # Maximum width for card names (Default: 870)
-flavor_text_top_height = 962    # Top height for writing flavor text (Default: 962)
+
+#flavor_text_top_height = 962    # Top height for writing flavor text (Default: 962)
+flavor_text_top_height.Beast = 962
+flavor_text_top_height.Undead = 962
+flavor_text_top_height.Tech = 962
+flavor_text_top_height.Magick = 962
+flavor_text_top_height.Insanity = 962
+flavor_text_top_height.Chaos = 962
+flavor_text_top_height.Valor = 962
+flavor_text_top_height.Space = 941 # TODO: recalibrate for new font
+
 max_flavor_text_width = 700     # Maximum width for flavor text (Default: 700)
 
-cost_bottom = 920               # Bottom height for drawing cost (Default: 920)
-cost_right_border = 990         # Right border for drawing cost (Default: 990)
+#cost_bottom = 920               # Bottom height for drawing cost (Default: 920)
+cost_bottom.Beast = 920
+cost_bottom.Undead = 920
+cost_bottom.Tech = 920
+cost_bottom.Magick = 920
+cost_bottom.Insanity = 920
+cost_bottom.Chaos = 920
+cost_bottom.Valor = 920
+cost_bottom.Space = 930
 
-health_coord = [893, 223]       # Coordinates of the health stat (Default: [893, 223])
+#cost_right_border = 990         # Right border for drawing cost (Default: 990)
+cost_right_border.Beast = 990
+cost_right_border.Undead = 990
+cost_right_border.Tech = 990
+cost_right_border.Magick = 990
+cost_right_border.Insanity = 990
+cost_right_border.Chaos = 990
+cost_right_border.Valor = 990
+cost_right_border.Space = 1010
+
+# health_coord = [893, 273]       # Coordinates of the health stat (Default: [893, 223])
+# health_coord.generic = [893, 223]
+
+health_coord.Beast = [893, 223]
+health_coord.Undead = [893, 223]
+health_coord.Tech = [893, 223]
+health_coord.Magick = [893, 223]
+health_coord.Insanity = [893, 213]
+health_coord.Chaos = [893, 223]
+health_coord.Valor = [893, 223]
+health_coord.Space = [881, 217]
+
 
 description_top_height = 15     # Top height for writing card description (Default: 15)
 
